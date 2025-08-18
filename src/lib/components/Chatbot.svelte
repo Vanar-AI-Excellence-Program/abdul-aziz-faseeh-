@@ -12,12 +12,19 @@
     content: string;
     timestamp: Date;
     userName?: string;
+    parentMessageId?: string;
+    orderIndex?: number;
   }
 
   let messages: ChatMessage[] = [];
   let newMessage = '';
   let isLoading = false;
   let error = '';
+     let editingMessageId: string | null = null;
+   let editingContent = '';
+   let isSavingEdit = false;
+   let currentBranch: string[] = []; // Track current conversation branch
+   let availableBranches: ChatMessage[][] = []; // All available branches
 
   // Initialize with welcome message and load chat history
   onMount(async () => {
@@ -32,8 +39,14 @@
             id: msg.id,
             role: msg.role,
             content: msg.content,
-            timestamp: new Date(msg.timestamp)
+            timestamp: new Date(msg.timestamp),
+            userName: msg.userName,
+            parentMessageId: msg.parentMessageId,
+            orderIndex: msg.orderIndex
           }));
+          
+          // Load available branches
+          await loadAvailableBranches();
         } else {
           // No history, show welcome message
           messages = [
@@ -99,6 +112,9 @@
     messages = [...messages, assistantMessage];
 
     try {
+      // Get the parent message ID (last message in current branch)
+      const parentMessageId = messages.length > 2 ? messages[messages.length - 3].id : null;
+
       // Use streaming API for real-time response
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -106,7 +122,8 @@
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: messageToSend
+          message: messageToSend,
+          parentMessageId: parentMessageId
         })
       });
 
@@ -137,6 +154,9 @@
         messages = [...messages];
       }
 
+      // Reload available branches after new message
+      await loadAvailableBranches();
+
     } catch (err) {
       console.error('Chat error:', err);
       error = err instanceof Error ? err.message : 'Failed to send message';
@@ -148,12 +168,22 @@
     }
   }
 
-  function handleKeyPress(event: KeyboardEvent) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  }
+     function handleKeyPress(event: KeyboardEvent) {
+     if (event.key === 'Enter' && !event.shiftKey) {
+       event.preventDefault();
+       sendMessage();
+     }
+   }
+
+   function handleEditKeyPress(event: KeyboardEvent) {
+     if (event.key === 'Enter' && event.ctrlKey) {
+       event.preventDefault();
+       saveEdit();
+     } else if (event.key === 'Escape') {
+       event.preventDefault();
+       cancelEditing();
+     }
+   }
 
   function formatTime(date: Date): string {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -185,6 +215,180 @@
       }
     ];
     error = '';
+  }
+
+  function startEditing(message: ChatMessage) {
+    if (message.role !== 'user') return;
+    editingMessageId = message.id;
+    editingContent = message.content;
+  }
+
+  function cancelEditing() {
+    editingMessageId = null;
+    editingContent = '';
+  }
+
+     async function saveEdit() {
+     if (!editingMessageId || !editingContent.trim() || isSavingEdit) return;
+
+     isSavingEdit = true;
+     error = '';
+
+     try {
+       // Update the message via API (this creates a new branch)
+       const response = await fetch(`/api/chat/messages/${editingMessageId}`, {
+         method: 'PUT',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({ content: editingContent.trim() })
+       });
+
+       if (!response.ok) {
+         throw new Error('Failed to update message');
+       }
+
+       const result = await response.json();
+       
+       // Load the new branch that was created
+       await loadConversationBranch(result.newMessageId);
+
+       // Regenerate the response for the new edited message
+       await regenerateResponse(editingContent.trim(), result.newMessageId);
+
+     } catch (err) {
+       console.error('Error updating message:', err);
+       error = err instanceof Error ? err.message : 'Failed to update message';
+     } finally {
+       isSavingEdit = false;
+       cancelEditing();
+     }
+   }
+
+  async function loadConversationBranch(messageId: string) {
+    try {
+      const response = await fetch(`/api/chat/branch/${messageId}`);
+      if (response.ok) {
+        const data = await response.json();
+        messages = data.branch.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          userName: msg.userName,
+          parentMessageId: msg.parentMessageId,
+          orderIndex: msg.orderIndex
+        }));
+        currentBranch = messages.map(msg => msg.id);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation branch:', error);
+    }
+  }
+
+  async function loadAvailableBranches() {
+    try {
+      const response = await fetch('/api/chat/branches');
+      if (response.ok) {
+        const data = await response.json();
+        availableBranches = data.branches.map((branch: any[]) => 
+          branch.map((msg: any) => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            userName: msg.userName,
+            parentMessageId: msg.parentMessageId,
+            orderIndex: msg.orderIndex
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load available branches:', error);
+    }
+  }
+
+  async function regenerateResponse(messageContent: string, messageId: string) {
+    isLoading = true;
+    error = '';
+
+    // Find the message to regenerate
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) {
+      error = 'Message not found';
+      isLoading = false;
+      return;
+    }
+
+    const message = messages[messageIndex];
+    
+    // Clear the current message content and show loading
+    message.content = '';
+    messages = [...messages];
+
+    try {
+      let requestBody: any = {
+        message: messageContent
+      };
+
+      // If it's a user message, we need to regenerate the assistant response
+      if (message.role === 'user') {
+        requestBody.editedMessageId = messageId;
+      } else {
+        // If it's an assistant message, we need to find the parent user message
+        const parentMessage = messages.find(msg => msg.id === message.parentMessageId);
+        if (parentMessage) {
+          requestBody.message = parentMessage.content;
+          requestBody.editedMessageId = parentMessage.id;
+        }
+      }
+
+      // Use streaming API for real-time response
+      const response = await fetch('/api/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let streamedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        // Decode the chunk and add to content
+        const chunk = decoder.decode(value, { stream: true });
+        streamedContent += chunk;
+        
+        // Update the message with the streamed content
+        message.content = streamedContent;
+        messages = [...messages];
+      }
+
+    } catch (err) {
+      console.error('Chat error:', err);
+      error = err instanceof Error ? err.message : 'Failed to regenerate response';
+      
+      // Restore original content on error
+      message.content = messageContent;
+      messages = [...messages];
+    } finally {
+      isLoading = false;
+    }
   }
 </script>
 
@@ -226,8 +430,8 @@
             </svg>
           </div>
           <div>
-            <h1 class="text-xl font-bold text-gray-900">AI Assistant</h1>
-            <p class="text-sm text-gray-600">Ask me anything!</p>
+                         <h1 class="text-xl font-bold text-gray-900">AI Assistant</h1>
+             <p class="text-sm text-gray-600">Ask me anything! ✏️ Click the edit button on any message to modify it.</p>
           </div>
         </div>
         
@@ -236,6 +440,29 @@
             <div class="w-2 h-2 bg-green-500 rounded-full"></div>
             <span class="text-sm text-gray-600">Online</span>
           </div>
+          
+          <!-- Branch Navigation -->
+          {#if availableBranches.length > 1}
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-600">Branches:</span>
+              <select
+                class="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                on:change={(e) => {
+                  const branchIndex = parseInt(e.target.value);
+                  if (branchIndex >= 0 && availableBranches[branchIndex]) {
+                    const lastMessage = availableBranches[branchIndex][availableBranches[branchIndex].length - 1];
+                    loadConversationBranch(lastMessage.id);
+                  }
+                }}
+              >
+                {#each availableBranches as branch, index}
+                  <option value={index}>
+                    Branch {index + 1} ({branch.length} messages)
+                  </option>
+                {/each}
+              </select>
+            </div>
+          {/if}
           
           <button
             on:click={clearChat}
@@ -266,22 +493,92 @@
                </div>
               
                              <!-- Message Bubble -->
-               <div class="px-4 py-3 rounded-2xl shadow-lg
+               <div class="px-4 py-3 rounded-2xl shadow-lg relative group cursor-pointer
                  {message.role === 'user' 
-                   ? 'bg-blue-600 text-white rounded-br-md' 
-                   : 'bg-gray-100 text-gray-900 rounded-bl-md'
-                 }">
+                   ? editingMessageId === message.id 
+                     ? 'bg-blue-700 text-white rounded-br-md ring-2 ring-blue-300 ring-opacity-50' 
+                     : 'bg-blue-600 text-white rounded-br-md hover:bg-blue-700' 
+                   : 'bg-gray-100 text-gray-900 rounded-bl-md hover:bg-gray-200'
+                 } transition-all duration-200">
                  {#if message.role === 'user' && message.userName}
                    <p class="text-xs opacity-80 mb-1 font-medium">
                      {message.userName}
                    </p>
                  {/if}
-                 <p class="text-sm leading-relaxed streaming-text">
-                   {@html formatMessageContent(message.content)}
-                   {#if message.role === 'assistant' && isLoading}
-                     <span class="inline-block w-2 h-4 bg-blue-500 typing-cursor ml-1"></span>
-                   {/if}
-                 </p>
+                 
+                 {#if editingMessageId === message.id}
+                   <!-- Edit Mode -->
+                   <div class="space-y-3">
+                     <textarea
+                       bind:value={editingContent}
+                       onKeyPress={handleEditKeyPress}
+                       class="w-full p-3 text-sm bg-white text-gray-900 rounded-lg border-2 border-blue-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm"
+                       rows="3"
+                       placeholder="Edit your message... (Ctrl+Enter to save, Esc to cancel)"
+                       autofocus
+                     ></textarea>
+                     <div class="flex space-x-2">
+                       <button
+                         on:click={saveEdit}
+                         disabled={isSavingEdit}
+                         class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                       >
+                         {#if isSavingEdit}
+                           <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                           </svg>
+                           <span>Saving...</span>
+                         {:else}
+                           <span>Save Changes</span>
+                         {/if}
+                       </button>
+                       <button
+                         on:click={cancelEditing}
+                         class="px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md"
+                       >
+                         Cancel
+                       </button>
+                     </div>
+                   </div>
+                 {:else}
+                   <!-- Display Mode -->
+                   <p class="text-sm leading-relaxed streaming-text">
+                     {@html formatMessageContent(message.content)}
+                     {#if message.role === 'assistant' && isLoading && message.content === ''}
+                       <span class="inline-block w-2 h-4 bg-blue-500 typing-cursor ml-1"></span>
+                     {/if}
+                   </p>
+                   
+                                       <!-- Action Buttons -->
+                    <div class="absolute top-2 right-2 flex space-x-1 opacity-100 transition-opacity duration-300">
+                      {#if message.role === 'user'}
+                        <!-- Edit Button for user messages - Always visible like ChatGPT -->
+                        <button
+                          on:click={() => startEditing(message)}
+                          class="p-1.5 rounded-md bg-white hover:bg-gray-50 shadow-sm transition-all duration-200 hover:scale-105 border border-gray-200"
+                          title="Edit message"
+                        >
+                          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                          </svg>
+                        </button>
+                      {:else}
+                        <!-- Regenerate Button for assistant messages -->
+                        <button
+                          on:click={() => regenerateResponse(message.content, message.id)}
+                          class="p-1.5 rounded-md bg-white hover:bg-gray-50 shadow-sm transition-all duration-200 hover:scale-105 border border-gray-200"
+                          title="Regenerate response"
+                        >
+                          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                          </svg>
+                        </button>
+                      {/if}
+                    </div>
+
+                 {/if}
+                 
                  <p class="text-xs mt-2 opacity-70
                    {message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}">
                    {formatTime(message.timestamp)}
