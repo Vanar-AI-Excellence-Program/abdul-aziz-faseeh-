@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { chatSessions, chatMessages, users } from '$lib/server/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray, notInArray, ne } from 'drizzle-orm';
 
 export interface ChatMessageData {
   id: string;
@@ -8,6 +8,8 @@ export interface ChatMessageData {
   content: string;
   timestamp: Date;
   userName?: string;
+  parentMessageId?: string;
+  orderIndex?: number;
 }
 
 export interface ChatSessionData {
@@ -62,18 +64,36 @@ export class ChatHistoryService {
     sessionId: string,
     role: 'user' | 'assistant',
     content: string,
-    userName?: string
+    userName?: string,
+    parentMessageId?: string
   ): Promise<string> {
     // For user messages, store the actual user name instead of "user"
     const roleToStore = role === 'user' && userName ? userName : role;
+    
+    // Get the next order index for this parent
+    let orderIndex = 0;
+    if (parentMessageId) {
+      const siblings = await db
+        .select({ orderIndex: chatMessages.orderIndex })
+        .from(chatMessages)
+        .where(eq(chatMessages.parentMessageId, parentMessageId))
+        .orderBy(desc(chatMessages.orderIndex))
+        .limit(1);
+      
+      if (siblings.length > 0) {
+        orderIndex = siblings[0].orderIndex + 1;
+      }
+    }
     
     const message = await db
       .insert(chatMessages)
       .values({
         sessionId,
+        parentMessageId,
         role: roleToStore,
         content,
-        timestamp: new Date()
+        timestamp: new Date(),
+        orderIndex
       })
       .returning();
 
@@ -119,6 +139,47 @@ export class ChatHistoryService {
         content: msg.content,
         timestamp: msg.timestamp,
         userName: isUserMessage ? msg.role : 'AI Assistant'
+      };
+    });
+  }
+
+  /**
+   * Get messages for a specific session
+   */
+  static async getSessionMessages(sessionId: string, userId: string): Promise<ChatMessageData[]> {
+    // First verify the session belongs to the user
+    const session = await db
+      .select()
+      .from(chatSessions)
+      .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+      .limit(1);
+
+    if (session.length === 0) {
+      return [];
+    }
+
+    // Get messages for the session
+    const messages = await db
+      .select({
+        id: chatMessages.id,
+        role: chatMessages.role,
+        content: chatMessages.content,
+        timestamp: chatMessages.timestamp
+      })
+      .from(chatMessages)
+      .where(eq(chatMessages.sessionId, sessionId))
+      .orderBy(chatMessages.timestamp);
+
+    return messages.map(msg => {
+      // Determine if this is a user message or assistant message
+      const isUserMessage = msg.role !== 'assistant';
+      
+      return {
+        id: msg.id,
+        role: isUserMessage ? 'user' : 'assistant',
+        content: msg.content,
+        timestamp: msg.timestamp,
+        userName: isUserMessage ? msg.role : undefined
       };
     });
   }
@@ -253,6 +314,185 @@ export class ChatHistoryService {
       .returning();
 
     return result.length > 0;
+  }
+
+  /**
+   * Update a message content and create a new branch
+   */
+  static async updateMessage(messageId: string, userId: string, newContent: string): Promise<{ success: boolean; newMessageId?: string }> {
+    // First verify the message belongs to the user by checking the session
+    const message = await db
+      .select({
+        id: chatMessages.id,
+        sessionId: chatMessages.sessionId,
+        parentMessageId: chatMessages.parentMessageId
+      })
+      .from(chatMessages)
+      .innerJoin(chatSessions, eq(chatMessages.sessionId, chatSessions.id))
+      .where(and(eq(chatMessages.id, messageId), eq(chatSessions.userId, userId)))
+      .limit(1);
+
+    if (message.length === 0) {
+      return { success: false };
+    }
+
+    // Create a new message with the updated content (this creates a new branch)
+    const newMessage = await db
+      .insert(chatMessages)
+      .values({
+        sessionId: message[0].sessionId,
+        parentMessageId: message[0].parentMessageId, // Same parent as original
+        role: 'user',
+        content: newContent,
+        timestamp: new Date(),
+        orderIndex: 0 // This will be the new branch
+      })
+      .returning();
+
+    return { success: true, newMessageId: newMessage[0].id };
+  }
+
+  /**
+   * Get all children of a message (for tree structure)
+   */
+  static async getMessageChildren(messageId: string, userId: string): Promise<ChatMessageData[]> {
+    // First verify the message belongs to the user
+    const message = await db
+      .select({
+        id: chatMessages.id,
+        sessionId: chatMessages.sessionId
+      })
+      .from(chatMessages)
+      .innerJoin(chatSessions, eq(chatMessages.sessionId, chatSessions.id))
+      .where(and(eq(chatMessages.id, messageId), eq(chatSessions.userId, userId)))
+      .limit(1);
+
+    if (message.length === 0) {
+      return [];
+    }
+
+    // Get all children of this message
+    const children = await db
+      .select({
+        id: chatMessages.id,
+        role: chatMessages.role,
+        content: chatMessages.content,
+        timestamp: chatMessages.timestamp,
+        parentMessageId: chatMessages.parentMessageId,
+        orderIndex: chatMessages.orderIndex
+      })
+      .from(chatMessages)
+      .where(eq(chatMessages.parentMessageId, messageId))
+      .orderBy(chatMessages.orderIndex, chatMessages.timestamp);
+
+    return children.map(msg => {
+      const isUserMessage = msg.role !== 'assistant';
+      return {
+        id: msg.id,
+        role: isUserMessage ? 'user' : 'assistant',
+        content: msg.content,
+        timestamp: msg.timestamp,
+        userName: isUserMessage ? msg.role : undefined,
+        parentMessageId: msg.parentMessageId,
+        orderIndex: msg.orderIndex
+      };
+    });
+  }
+
+  /**
+   * Get conversation branch (path from root to a specific message)
+   */
+  static async getConversationBranch(messageId: string, userId: string): Promise<ChatMessageData[]> {
+    // First verify the message belongs to the user
+    const message = await db
+      .select({
+        id: chatMessages.id,
+        sessionId: chatMessages.sessionId
+      })
+      .from(chatMessages)
+      .innerJoin(chatSessions, eq(chatMessages.sessionId, chatSessions.id))
+      .where(and(eq(chatMessages.id, messageId), eq(chatSessions.userId, userId)))
+      .limit(1);
+
+    if (message.length === 0) {
+      return [];
+    }
+
+    // Get the conversation path by traversing up the tree
+    const branch: ChatMessageData[] = [];
+    let currentMessageId = messageId;
+
+    while (currentMessageId) {
+      const msg = await db
+        .select({
+          id: chatMessages.id,
+          role: chatMessages.role,
+          content: chatMessages.content,
+          timestamp: chatMessages.timestamp,
+          parentMessageId: chatMessages.parentMessageId,
+          orderIndex: chatMessages.orderIndex
+        })
+        .from(chatMessages)
+        .where(eq(chatMessages.id, currentMessageId))
+        .limit(1);
+
+      if (msg.length === 0) break;
+
+      const isUserMessage = msg[0].role !== 'assistant';
+      branch.unshift({
+        id: msg[0].id,
+        role: isUserMessage ? 'user' : 'assistant',
+        content: msg[0].content,
+        timestamp: msg[0].timestamp,
+        userName: isUserMessage ? msg[0].role : undefined,
+        parentMessageId: msg[0].parentMessageId,
+        orderIndex: msg[0].orderIndex
+      });
+
+      currentMessageId = msg[0].parentMessageId || '';
+    }
+
+    return branch;
+  }
+
+  /**
+   * Get all branches in a session (for tree view)
+   */
+  static async getSessionBranches(sessionId: string, userId: string): Promise<ChatMessageData[][]> {
+    // First verify the session belongs to the user
+    const session = await db
+      .select()
+      .from(chatSessions)
+      .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+      .limit(1);
+
+    if (session.length === 0) {
+      return [];
+    }
+
+    // Get all leaf messages (messages with no children)
+    const leafMessages = await db
+      .select({
+        id: chatMessages.id
+      })
+      .from(chatMessages)
+      .where(eq(chatMessages.sessionId, sessionId))
+      .where(
+        notInArray(
+          chatMessages.id,
+          db.select({ parentMessageId: chatMessages.parentMessageId })
+            .from(chatMessages)
+            .where(eq(chatMessages.sessionId, sessionId))
+            .where(ne(chatMessages.parentMessageId, null))
+        )
+      );
+
+    // Get the full branch for each leaf
+    const branches = await Promise.all(
+      leafMessages.map(leaf => this.getConversationBranch(leaf.id, userId))
+    );
+
+    return branches.filter(branch => branch.length > 0);
   }
 
   /**
