@@ -57,18 +57,33 @@ export const actions: Actions = {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create admin user with pending approval
+      // Check if any admin users already exist
+      const existingAdmins = await db.query.users.findMany({
+        where: eq(users.role, 'admin')
+      });
+
+      // If no admins exist, approve the first admin automatically
+      // If admins exist, require approval
+      const shouldAutoApprove = existingAdmins.length === 0;
+
+      // Create admin user
       await db.insert(users).values({
         name: name.trim(),
         email: email.trim(),
         password: hashedPassword,
         role: 'admin',
-        adminApproved: false // Pending approval
+        adminApproved: shouldAutoApprove // Auto-approve first admin, require approval for others
       });
 
-      return {
-        success: 'Admin registration successful! Your account is pending approval from an existing admin. You will be able to sign in once approved.'
-      };
+      if (shouldAutoApprove) {
+        return {
+          success: 'Admin registration successful! You are the first admin and have been automatically approved. You can now sign in.'
+        };
+      } else {
+        return {
+          success: 'Admin registration successful! Your account is pending approval from an existing admin. You will be able to sign in once approved.'
+        };
+      }
 
     } catch (error) {
       console.error('Admin registration error:', error);
