@@ -17,7 +17,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       return json({ error: 'Session not found' }, { status: 404 });
     }
 
-    return json(chatSession);
+    // Get messages for this session
+    const messages = await ChatHistoryService.getSessionMessages(sessionId, session.user.id);
+
+    return json({
+      session: chatSession,
+      messages: messages
+    });
 
   } catch (error) {
     console.error('Get session error:', error);
