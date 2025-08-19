@@ -45,6 +45,11 @@ export const authHandle = SvelteKitAuth({
 
         if (!passwordMatch) return null;
 
+        // Check admin approval for admin users
+        if (user.role === 'admin' && !user.adminApproved) {
+          return null; // Admin not approved, deny access
+        }
+
         return {
           id: user.id,
           email: user.email,
