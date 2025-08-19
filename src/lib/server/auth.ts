@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import Credentials from '@auth/core/providers/credentials';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import type { Provider } from '@auth/core/providers';
 import GoogleProvider from '@auth/core/providers/google';
 import GitHubProvider from '@auth/core/providers/github';
