@@ -19,13 +19,19 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     });
 
     if (!user) {
-      return json({ error: 'No account found with this email address. Please check your email or sign up for a new account.' }, { status: 401 });
+      return json({ 
+        error: 'No account found with this email address. Please check your email or sign up for a new account.',
+        errorType: 'EMAIL_NOT_FOUND'
+      }, { status: 401 });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password || '');
     if (!isValidPassword) {
-      return json({ error: 'The password you entered is incorrect. Please try again or reset your password if you have forgotten it.' }, { status: 401 });
+      return json({ 
+        error: 'The password you entered is incorrect. Please try again or reset your password if you have forgotten it.',
+        errorType: 'WRONG_PASSWORD'
+      }, { status: 401 });
     }
 
     // Check email verification
@@ -33,7 +39,16 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return json({ 
         error: 'Your email address is not verified. Please check your email for the verification code.',
         requiresVerification: true,
-        email: user.email
+        email: user.email,
+        errorType: 'EMAIL_NOT_VERIFIED'
+      }, { status: 403 });
+    }
+
+    // Check admin approval for admin users
+    if (user.role === 'admin' && user.adminApproved !== 1) {
+      return json({ 
+        error: 'Your admin account is pending approval. Please wait for an existing admin to approve your account.',
+        errorType: 'ADMIN_APPROVAL_PENDING'
       }, { status: 403 });
     }
 

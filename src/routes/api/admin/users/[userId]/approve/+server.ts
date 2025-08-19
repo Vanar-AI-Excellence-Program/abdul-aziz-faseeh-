@@ -45,14 +45,14 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
       return json({ error: 'User is not an admin' }, { status: 400 });
     }
 
-    if (userToApprove.adminApproved) {
+    if (userToApprove.adminApproved === 1) {
       return json({ error: 'User is already approved' }, { status: 400 });
     }
 
     // Approve the admin user
     await db.update(users)
       .set({
-        adminApproved: true,
+        adminApproved: 1, // Use integer 1 instead of boolean true
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
@@ -68,4 +68,4 @@ export const PUT: RequestHandler = async ({ params, locals }) => {
     console.error('Admin approval error:', error);
     return json({ error: `Internal server error: ${error.message}` }, { status: 500 });
   }
-};
+}

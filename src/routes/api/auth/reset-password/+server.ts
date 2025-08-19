@@ -22,7 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
     // Get all tokens for this email and find the most recent one
     const allTokens = await db.query.verificationTokens.findMany({
       where: eq(verificationTokens.identifier, email),
-      orderBy: (tokens, { desc }) => [desc(tokens.expires)]
+      orderBy: (tokens, { desc }) => [desc(tokens.expiresAt)]
     });
     console.log('🔍 Total tokens for email:', allTokens.length);
 
@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     // Check if token is expired
-    if (new Date() > verificationToken.expires) {
+    if (new Date() > verificationToken.expiresAt) {
       return json({ error: 'Reset token has expired' }, { status: 400 });
     }
 
@@ -80,4 +80,4 @@ export const POST: RequestHandler = async ({ request }) => {
     console.error('Reset password error:', error);
     return json({ error: 'Internal server error' }, { status: 500 });
   }
-};
+}

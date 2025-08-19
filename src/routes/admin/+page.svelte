@@ -2,6 +2,7 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { goto } from '$app/navigation';
+  import { signOut } from '@auth/sveltekit/client';
   import { onMount } from 'svelte';
 
   let { data } = $props();
@@ -81,8 +82,26 @@
     }
   }
 
-  function handleSignOut() {
-    goto('/api/auth/signout');
+  async function handleSignOut() {
+    try {
+      // Use Auth.js signOut function
+      const result = await signOut({ 
+        callbackUrl: '/',
+        redirect: false 
+      });
+      
+      if (result?.url) {
+        // Redirect to the callback URL
+        window.location.href = result.url;
+      } else {
+        // Fallback: redirect to home
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Fallback: force redirect to home
+      window.location.href = '/';
+    }
   }
 </script>
 

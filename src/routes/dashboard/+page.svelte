@@ -34,7 +34,25 @@
   }
 
   async function handleSignOut() {
-    await signOut({ callbackUrl: '/' });
+    try {
+      // Use Auth.js signOut function
+      const result = await signOut({ 
+        callbackUrl: '/',
+        redirect: false 
+      });
+      
+      if (result?.url) {
+        // Redirect to the callback URL
+        window.location.href = result.url;
+      } else {
+        // Fallback: redirect to home
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Fallback: force redirect to home
+      window.location.href = '/';
+    }
   }
 
   function formatDate(date: Date | null): string {
