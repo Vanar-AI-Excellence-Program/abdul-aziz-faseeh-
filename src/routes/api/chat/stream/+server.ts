@@ -11,23 +11,34 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message } = await request.json();
+    const { message, sessionId, editedMessageId, parentMessageId } = await request.json();
 
     if (!message || typeof message !== 'string') {
       return json({ error: 'Message is required' }, { status: 400 });
     }
 
     // Get or create a chat session for the user
-    const sessionId = await ChatHistoryService.getOrCreateSession(session.user.id);
+    let currentSessionId = sessionId;
+    if (!currentSessionId) {
+      // Create a new session for this conversation
+      currentSessionId = await ChatHistoryService.createNewSession(session.user.id, message.substring(0, 50) + (message.length > 50 ? '...' : ''));
+    }
     
-    // Store the user message with the user's name
-    await ChatHistoryService.storeMessage(sessionId, 'user', message, session.user.name);
+    // If this is an edited message, we don't store it again (it was already updated via the PUT endpoint)
+    if (!editedMessageId) {
+      // Store the user message with the user's name and parent message ID
+      await ChatHistoryService.storeMessage(currentSessionId, 'user', message, session.user.name, parentMessageId);
+    }
 
     // Create a ReadableStream for streaming the response
     const stream = new ReadableStream({
       async start(controller) {
         try {
           let assistantResponse = '';
+          
+          // Send session ID as first chunk so frontend knows which session this is
+          const sessionInfo = JSON.stringify({ sessionId: currentSessionId, type: 'session_info' }) + '\n';
+          controller.enqueue(new TextEncoder().encode(sessionInfo));
           
           // Create a custom stream controller that captures the full response
           const customController = {
@@ -39,7 +50,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             close: () => {
               // Store the complete assistant response
               if (assistantResponse.trim()) {
-                ChatHistoryService.storeMessage(sessionId, 'assistant', assistantResponse.trim())
+                ChatHistoryService.storeMessage(currentSessionId, 'assistant', assistantResponse.trim())
                   .catch(error => console.error('Failed to store assistant message:', error));
               }
               controller.close();
@@ -49,8 +60,26 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             }
           };
           
+          // If this is an edited message, get the conversation context up to that message
+          let contextMessages: any[] = [];
+          if (editedMessageId) {
+            try {
+              // Get the conversation branch up to the edited message
+              contextMessages = await ChatHistoryService.getConversationBranch(editedMessageId, session.user.id);
+            } catch (error) {
+              console.error('Error getting context messages:', error);
+            }
+          } else if (parentMessageId) {
+            try {
+              // Get the conversation branch up to the parent message
+              contextMessages = await ChatHistoryService.getConversationBranch(parentMessageId, session.user.id);
+            } catch (error) {
+              console.error('Error getting context messages:', error);
+            }
+          }
+          
           // Stream the response using the Gemini service
-          await geminiService.streamResponse(message, customController, sessionId);
+          await geminiService.streamResponse(message, customController, currentSessionId, contextMessages);
         } catch (error) {
           console.error('Streaming error:', error);
           controller.error(error);
