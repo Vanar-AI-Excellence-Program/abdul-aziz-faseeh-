@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { userService } from '$lib/server/services/user-service';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export const PUT: RequestHandler = async ({ request, locals }) => {
   const session = await locals.getSession();
