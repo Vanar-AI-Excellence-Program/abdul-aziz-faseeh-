@@ -64,17 +64,17 @@
       }
 
       // Registration successful
-      // Send verification email
-      await fetch('/api/auth/send-verification-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      success = true;
-      setTimeout(() => {
-        goto('/login');
-      }, 2000);
+      if (data.requiresVerification) {
+        success = data.message;
+        setTimeout(() => {
+          goto(`/verify-email?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      } else {
+        success = data.message;
+        setTimeout(() => {
+          goto('/login');
+        }, 2000);
+      }
     } catch (err) {
       if (err instanceof Error) {
         error = err.message;

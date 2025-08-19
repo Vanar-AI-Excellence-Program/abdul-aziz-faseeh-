@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { userService } from '$lib/server/services/user-service';
+import { otpService } from '$lib/server/services/otp-service';
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
@@ -23,13 +24,30 @@ export const POST: RequestHandler = async ({ request }) => {
     // Create user with role
     const user = await userService.createUser({ name, email, password, role });
 
+    // Generate and send OTP for email verification
+    const otpResult = await otpService.generateAndSendOTP(user.id, user.email);
+
+    if (!otpResult.success) {
+      console.error('Failed to send OTP:', otpResult.message);
+      // Still return success for user creation, but note the email issue
+      return json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        message: 'User registered successfully, but there was an issue sending the verification email. Please contact support.',
+        requiresVerification: true
+      }, { status: 201 });
+    }
+
     // Return success response without sensitive data
     return json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      message: 'User registered successfully'
+      message: 'User registered successfully. Please check your email for the verification code.',
+      requiresVerification: true
     }, { status: 201 });
   } catch (error) {
     console.error('Registration error:', error);

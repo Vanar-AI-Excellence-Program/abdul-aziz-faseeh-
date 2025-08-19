@@ -9,6 +9,10 @@ export const users = pgTable('users', {
   password: varchar('password', { length: 255 }),
   role: varchar('role', { length: 32 }).default('user').notNull(),
   adminApproved: integer('admin_approved').default(0).notNull(),
+  // OTP verification fields
+  otpCode: varchar('otp_code', { length: 6 }),
+  otpExpiresAt: timestamp('otp_expires_at'),
+  isEmailVerified: integer('is_email_verified').default(0).notNull(), // 0 = false, 1 = true
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });

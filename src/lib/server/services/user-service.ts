@@ -37,8 +37,8 @@ export const userService = {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Determine admin approval status
-    let adminApproved = true; // Default to approved for clients
+    // Determine admin approval status (using integer: 0 = false, 1 = true)
+    let adminApproved = 1; // Default to approved
 
     if (role === 'admin') {
       // Check if any admin users already exist
@@ -48,8 +48,9 @@ export const userService = {
 
       // If no admins exist, approve the first admin automatically
       // If admins exist, require approval
-      adminApproved = existingAdmins.length === 0;
+      adminApproved = existingAdmins.length === 0 ? 1 : 0;
     }
+    // Clients are always auto-approved (no admin approval needed)
 
     // Create user
     const [user] = await db.insert(users).values({
@@ -59,7 +60,8 @@ export const userService = {
       password: hashedPassword,
       role,
       adminApproved,
-      emailVerified: new Date()
+      isEmailVerified: 0, // Email not verified initially
+      emailVerified: null // Will be set when OTP is verified
     }).returning();
 
     return user;

@@ -28,6 +28,15 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return json({ error: 'The password you entered is incorrect. Please try again or reset your password if you have forgotten it.' }, { status: 401 });
     }
 
+    // Check email verification
+    if (user.isEmailVerified !== 1) {
+      return json({ 
+        error: 'Your email address is not verified. Please check your email for the verification code.',
+        requiresVerification: true,
+        email: user.email
+      }, { status: 403 });
+    }
+
     // Check if user has the expected role (if role parameter is provided)
     if (role && user.role !== role) {
       return json({ error: `Access denied. This login is restricted to ${role} users only. Please ensure you are using the correct login portal.` }, { status: 403 });

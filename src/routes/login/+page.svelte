@@ -29,6 +29,7 @@
     success = '';
 
     try {
+      // First try with Auth.js
       const result = await signIn('credentials', {
         email,
         password,
@@ -37,7 +38,30 @@
       });
 
       if (result?.error) {
-        error = result.error;
+        // If Auth.js fails, try custom login API for better error messages
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password, role })
+          });
+
+          const data = await response.json();
+
+          if (data.requiresVerification) {
+            error = data.error;
+            // Add a link to verification page
+            setTimeout(() => {
+              goto(`/verify-email?email=${encodeURIComponent(email)}`);
+            }, 3000);
+          } else {
+            error = data.error || result.error;
+          }
+        } catch {
+          error = result.error;
+        }
       } else {
         success = 'Sign in successfully!';
         await invalidateAll();
@@ -129,11 +153,20 @@
 
           <!-- Enhanced Alert Messages -->
           {#if error}
-            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center backdrop-blur-sm" role="alert">
-              <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-start backdrop-blur-sm" role="alert">
+              <svg class="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <p class="font-medium">{error}</p>
+              <div>
+                <p class="font-medium">{error}</p>
+                {#if error.includes('not verified')}
+                  <p class="mt-2 text-sm">
+                    <a href="/verify-email?email={encodeURIComponent(email)}" class="text-red-800 underline hover:text-red-900">
+                      Click here to verify your email →
+                    </a>
+                  </p>
+                {/if}
+              </div>
             </div>
           {/if}
 
