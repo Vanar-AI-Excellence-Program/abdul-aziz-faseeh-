@@ -118,7 +118,7 @@
               {
                 id: '1',
                 role: 'assistant',
-                content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant. How can I help you today?`,
+                content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant powered by Google Gemini. I can help you with anything - from answering questions and solving problems to helping with coding, writing, analysis, and creative tasks. What would you like to work on today?`,
                 timestamp: new Date()
               }
             ];
@@ -130,7 +130,7 @@
           {
             id: '1',
             role: 'assistant',
-            content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant. How can I help you today?`,
+            content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant powered by Google Gemini. I can help you with anything - from answering questions and solving problems to helping with coding, writing, analysis, and creative tasks. What would you like to work on today?`,
             timestamp: new Date()
           }
         ];
@@ -142,7 +142,7 @@
         {
           id: '1',
           role: 'assistant',
-          content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant. How can I help you today?`,
+          content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant powered by Google Gemini. I can help you with anything - from answering questions and solving problems to helping with coding, writing, analysis, and creative tasks. What would you like to work on today?`,
           timestamp: new Date()
         }
       ];
@@ -277,7 +277,7 @@
       {
         id: '1',
         role: 'assistant',
-        content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant. How can I help you today?`,
+        content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant powered by Google Gemini. I can help you with anything - from answering questions and solving problems to helping with coding, writing, analysis, and creative tasks. What would you like to work on today?`,
         timestamp: new Date()
       }
     ];
@@ -391,7 +391,7 @@
       {
         id: '1',
         role: 'assistant',
-        content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant. How can I help you today?`,
+        content: `Hello ${session?.user?.name || 'there'}! I'm your AI assistant powered by Google Gemini. I can help you with anything - from answering questions and solving problems to helping with coding, writing, analysis, and creative tasks. What would you like to work on today?`,
         timestamp: new Date()
       }
     ];
@@ -478,15 +478,38 @@
     .messages-wrapper {
       flex: 1;
       overflow-y: auto;
-      padding: 1rem;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 2rem;
+      max-width: 100%;
     }
 
     /* Ensure messages don't interfere with scroll */
     .message-item {
       flex-shrink: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    /* Message content improvements */
+    .message-content {
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .messages-wrapper {
+        padding: 1rem;
+        gap: 1.5rem;
+      }
+      
+      .message-item {
+        margin: 0 -0.5rem;
+      }
     }
 
     /* Session item hover effects */
@@ -513,12 +536,16 @@
 
     /* AI Response Styling */
     .ai-response {
-      line-height: 1.6;
+      line-height: 1.7;
       font-size: 0.95rem;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
     }
 
     .ai-response p {
       margin-bottom: 0.75rem;
+      max-width: 100%;
     }
 
     .ai-response p:last-child {
@@ -533,21 +560,53 @@
     .ai-response ul, .ai-response ol {
       margin: 0.5rem 0;
       padding-left: 1.5rem;
+      max-width: 100%;
     }
 
     .ai-response li {
       margin-bottom: 0.25rem;
+      word-wrap: break-word;
     }
 
     .ai-response code {
       background-color: rgba(0, 0, 0, 0.1);
-      padding: 0.125rem 0.25rem;
-      border-radius: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
       font-size: 0.875em;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      word-break: break-all;
+      max-width: 100%;
+      overflow-x: auto;
     }
 
     .dark .ai-response code {
       background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .ai-response pre {
+      background-color: rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      max-width: 100%;
+      margin: 1rem 0;
+    }
+
+    .dark .ai-response pre {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .ai-response blockquote {
+      border-left: 4px solid #e5e7eb;
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-style: italic;
+      color: #6b7280;
+    }
+
+    .dark .ai-response blockquote {
+      border-left-color: #4b5563;
+      color: #9ca3af;
     }
 
     /* Typing animation */
@@ -818,19 +877,19 @@
                 </div>
                 
                 <!-- Message Bubble -->
-                <div class="flex-1">
-                  <div class="px-4 py-3 rounded-2xl shadow-sm
+                <div class="flex-1 max-w-4xl">
+                  <div class="px-6 py-4 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700
                     {message.role === 'user' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/25' 
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-gray-200/50 dark:shadow-gray-800/50'
                     }">
                     <div class="prose prose-sm max-w-none dark:prose-invert {message.role === 'user' ? 'prose-invert' : ''}">
                       {#if message.role === 'assistant'}
-                        <div class="ai-response whitespace-pre-wrap leading-relaxed">
+                        <div class="ai-response whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                           {@html formatMessageContent(message.content)}
                         </div>
                       {:else}
-                        <div class="whitespace-pre-wrap">
+                        <div class="whitespace-pre-wrap break-words overflow-hidden">
                           {message.content}
                         </div>
                       {/if}
@@ -839,9 +898,16 @@
                       {/if}
                     </div>
                   </div>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-4">
-                    {formatTime(message.timestamp)}
-                  </p>
+                  <div class="flex items-center gap-2 mt-3 ml-6">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                      {formatTime(message.timestamp)}
+                    </p>
+                    {#if message.role === 'user'}
+                      <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                    {:else}
+                      <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    {/if}
+                  </div>
                 </div>
               </div>
             </div>
@@ -851,16 +917,16 @@
         <!-- Loading Indicator -->
         {#if isLoading}
           <div class="message-item flex justify-start" in:fly={{ y: 20, duration: 300 }}>
-            <div class="max-w-2xl w-full">
+            <div class="max-w-4xl w-full">
               <div class="flex items-start space-x-3">
-                <div class="w-8 h-8 rounded-full bg-gray-600 dark:bg-gray-500 flex items-center justify-center text-white text-sm font-semibold">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg">
                   AI
                 </div>
                 <div class="flex-1">
-                  <div class="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 shadow-sm">
-                    <div class="flex items-center space-x-2">
+                  <div class="px-6 py-4 rounded-3xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center space-x-3">
                       <LoadingDots size="md" color="gray" />
-                      <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">AI is thinking...</span>
+                      <span class="text-sm text-gray-600 dark:text-gray-300 font-medium">AI is thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -872,8 +938,15 @@
         <!-- Error Message -->
         {#if error}
           <div class="message-item flex justify-center" in:fly={{ y: 20, duration: 300 }}>
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl px-4 py-3 shadow-sm">
-              <p class="text-red-700 dark:text-red-400 text-sm font-medium">{error}</p>
+            <div class="max-w-4xl w-full">
+              <div class="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-3xl px-6 py-4 shadow-lg">
+                <div class="flex items-center space-x-3">
+                  <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p class="text-red-700 dark:text-red-400 text-sm font-medium">{error}</p>
+                </div>
+              </div>
             </div>
           </div>
         {/if}
@@ -894,41 +967,44 @@
     </div>
 
     <!-- Input Area -->
-    <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-900">
+    <div class="border-t border-gray-200 dark:border-gray-700 p-6 bg-white dark:bg-gray-900">
       <div class="max-w-4xl mx-auto">
-        <div class="flex space-x-4">
-          <div class="flex-1">
-            <AutoResizeTextarea
-              bind:value={newMessage}
-              placeholder="Type your message here..."
-              disabled={isLoading}
-              rows={1}
-              maxRows={6}
-              onkeydown={handleKeyPress}
-            />
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div class="flex items-end space-x-4">
+            <div class="flex-1">
+              <AutoResizeTextarea
+                bind:value={newMessage}
+                placeholder="Type your message here... Ask me anything - I'm here to help! 🤖✨"
+                disabled={isLoading}
+                rows={1}
+                maxRows={6}
+                onkeydown={handleKeyPress}
+                class="w-full resize-none border-0 bg-transparent focus:ring-0 focus:outline-none text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+            <Button
+              onClick={sendMessage}
+              disabled={!newMessage.trim() || isLoading}
+              variant="primary"
+              size="lg"
+              class="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            >
+              {#if isLoading}
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              {:else}
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+              {/if}
+            </Button>
           </div>
-          <Button
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || isLoading}
-            variant="primary"
-            size="lg"
-            class="px-6"
-          >
-            {#if isLoading}
-              <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            {:else}
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-              </svg>
-            {/if}
-          </Button>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+            Press Enter to send, Shift+Enter for new line
+          </p>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-          Press Enter to send, Shift+Enter for new line
-        </p>
       </div>
     </div>
   </div>
