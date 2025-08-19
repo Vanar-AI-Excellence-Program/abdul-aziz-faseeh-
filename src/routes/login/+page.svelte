@@ -2,6 +2,7 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Input from '$lib/components/ui/Input.svelte';
+  import ErrorPopup from '$lib/components/ui/ErrorPopup.svelte';
   import { goto } from '$app/navigation';
   import { invalidateAll } from '$app/navigation';
   import { signIn } from '@auth/sveltekit/client';
@@ -21,6 +22,9 @@
   let loading = false;
   let error = '';
   let success = '';
+  let showErrorPopup = $state(false);
+  let errorType = $state('');
+  let errorMessage = $state('');
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -29,6 +33,7 @@
     success = '';
 
     try {
+      // First try with Auth.js
       const result = await signIn('credentials', {
         email,
         password,
@@ -37,7 +42,36 @@
       });
 
       if (result?.error) {
-        error = result.error;
+        // If Auth.js fails, try custom login API for better error messages
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password, role })
+          });
+
+          const data = await response.json();
+
+          if (data.errorType) {
+            // Show specific error popup
+            errorType = data.errorType;
+            errorMessage = data.error;
+            showErrorPopup = true;
+            
+            // Special handling for email verification
+            if (data.requiresVerification) {
+              setTimeout(() => {
+                goto(`/verify-email?email=${encodeURIComponent(email)}`);
+              }, 3000);
+            }
+          } else {
+            error = data.error || result.error;
+          }
+        } catch {
+          error = result.error;
+        }
       } else {
         success = 'Sign in successfully!';
         await invalidateAll();
@@ -129,11 +163,20 @@
 
           <!-- Enhanced Alert Messages -->
           {#if error}
-            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center backdrop-blur-sm" role="alert">
-              <svg class="w-6 h-6 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-start backdrop-blur-sm" role="alert">
+              <svg class="w-6 h-6 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <p class="font-medium">{error}</p>
+              <div>
+                <p class="font-medium">{error}</p>
+                {#if error.includes('not verified')}
+                  <p class="mt-2 text-sm">
+                    <a href="/verify-email?email={encodeURIComponent(email)}" class="text-red-800 underline hover:text-red-900">
+                      Click here to verify your email →
+                    </a>
+                  </p>
+                {/if}
+              </div>
             </div>
           {/if}
 
@@ -223,6 +266,19 @@
               />
             </div>
 
+            <!-- Inline Error Popup -->
+            <ErrorPopup 
+              bind:show={showErrorPopup}
+              errorType={errorType}
+              message={errorMessage}
+              position="inline"
+              onClose={() => {
+                showErrorPopup = false;
+                errorType = '';
+                errorMessage = '';
+              }}
+            />
+
             <div class="flex items-center justify-between text-sm">
               <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
@@ -264,3 +320,4 @@
     </div>
   </div>
 </div>
+

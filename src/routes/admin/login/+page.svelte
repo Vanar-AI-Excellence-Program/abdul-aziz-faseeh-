@@ -2,6 +2,7 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Input from '$lib/components/ui/Input.svelte';
+  import ErrorPopup from '$lib/components/ui/ErrorPopup.svelte';
   import { goto } from '$app/navigation';
   import { invalidateAll } from '$app/navigation';
   import { signIn } from '@auth/sveltekit/client';
@@ -14,6 +15,9 @@
   let loading = false;
   let error = '';
   let success = '';
+  let showErrorPopup = $state(false);
+  let errorType = $state('');
+  let errorMessage = $state('');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,7 +34,29 @@
       });
 
       if (result?.error) {
-        error = result.error;
+        // Try custom login API for better error messages
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password, role: 'admin' })
+          });
+
+          const data = await response.json();
+
+          if (data.errorType) {
+            // Show specific error popup
+            errorType = data.errorType;
+            errorMessage = data.error;
+            showErrorPopup = true;
+          } else {
+            error = data.error || result.error;
+          }
+        } catch {
+          error = result.error;
+        }
       } else {
         success = 'Admin sign in successful!';
         await invalidateAll();
@@ -138,6 +164,19 @@
               />
             </div>
 
+            <!-- Inline Error Popup -->
+            <ErrorPopup 
+              bind:show={showErrorPopup}
+              errorType={errorType}
+              message={errorMessage}
+              position="inline"
+              onClose={() => {
+                showErrorPopup = false;
+                errorType = '';
+                errorMessage = '';
+              }}
+            />
+
             <div class="flex items-center justify-between text-sm">
               <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
@@ -173,3 +212,5 @@
     </div>
   </div>
 </div>
+
+

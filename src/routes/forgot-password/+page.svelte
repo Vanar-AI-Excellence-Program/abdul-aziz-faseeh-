@@ -8,6 +8,7 @@
   let loading = $state(false);
   let success = $state(false);
   let error = $state('');
+  let resetUrl = $state('');
 
   async function handleSubmit() {
     if (!email) {

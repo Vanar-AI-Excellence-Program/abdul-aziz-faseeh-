@@ -69,10 +69,17 @@
       }
 
       // Registration successful
-      success = true;
-      setTimeout(() => {
-        goto('/login?role=client');
-      }, 2000);
+      if (data.requiresVerification) {
+        success = data.message;
+        setTimeout(() => {
+          goto(`/verify-email?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      } else {
+        success = data.message;
+        setTimeout(() => {
+          goto('/login?role=client');
+        }, 2000);
+      }
     } catch (err) {
       if (err instanceof Error) {
         error = err.message;

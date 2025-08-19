@@ -42,11 +42,11 @@ export const POST: RequestHandler = async ({ request }) => {
     await db.insert(verificationTokens).values({
       identifier: email,
       token: hashedToken,
-      expires: resetTokenExpiry
+      expiresAt: resetTokenExpiry
     });
 
-    // Create reset URL - use localhost:5174 if AUTH_URL is not set
-    const baseUrl = process.env.AUTH_URL || 'http://localhost:5174';
+    // Create reset URL - use localhost:5173 if AUTH_URL is not set
+    const baseUrl = process.env.AUTH_URL || 'http://localhost:5173';
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     
     console.log('🔗 Generated reset URL:', resetUrl);

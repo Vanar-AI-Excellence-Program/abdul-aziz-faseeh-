@@ -2,6 +2,7 @@
   import Card from '$lib/components/ui/Card.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { goto } from '$app/navigation';
+  import { signOut } from '@auth/sveltekit/client';
 
   let { data } = $props();
   let { session, users, userCount } = data;
@@ -118,6 +119,29 @@
       alert('Failed to reject admin');
     }
   }
+
+  // Function to handle sign out
+  async function handleSignOut() {
+    try {
+      // Use Auth.js signOut function
+      const result = await signOut({ 
+        callbackUrl: '/',
+        redirect: false 
+      });
+      
+      if (result?.url) {
+        // Redirect to the callback URL
+        window.location.href = result.url;
+      } else {
+        // Fallback: redirect to home
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Fallback: force redirect to home
+      window.location.href = '/';
+    }
+  }
 </script>
 
 <svelte:head>
@@ -186,6 +210,16 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
               Manage Users
+            </Button>
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              class="bg-gradient-to-r from-red-50 to-pink-50 text-red-700 border-red-400 hover:from-red-100 hover:to-pink-100 hover:border-red-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border-2"
+            >
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
             </Button>
           </div>
         </div>

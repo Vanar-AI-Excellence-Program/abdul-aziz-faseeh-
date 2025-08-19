@@ -14,8 +14,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     throw redirect(303, '/dashboard');
   }
 
-  // Return session for admin users to show admin page
-  return {
-    session
-  };
+  // Redirect to the main admin dashboard instead of showing this page
+  throw redirect(303, '/admin/dashboard');
 };
