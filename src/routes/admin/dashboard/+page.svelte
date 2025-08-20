@@ -180,46 +180,65 @@
               </p>
             </div>
           </div>
-          <div class="flex space-x-4">
+          <div class="grid grid-cols-2 gap-3 max-w-lg">
+            <!-- Edit Profile Button - Blue -->
             <Button 
               onClick={() => goto('/admin/profile')}
               variant="outline"
-              class="bg-gradient-to-r from-sky-50 to-blue-50 text-sky-700 border-sky-400 hover:from-sky-100 hover:to-blue-100 hover:border-sky-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border-2"
+              class="group relative overflow-hidden bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-2 border-blue-300 hover:from-blue-100 hover:to-blue-200 hover:border-blue-500 hover:text-blue-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              Edit Profile
+              <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div class="relative flex items-center gap-2 justify-center">
+                <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>Edit Profile</span>
+              </div>
             </Button>
+
+            <!-- Change Password Button - Green -->
             <Button 
               onClick={() => goto('/admin/change-password')}
               variant="outline"
-              class="bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border-green-400 hover:from-green-100 hover:to-emerald-100 hover:border-green-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border-2"
+              class="group relative overflow-hidden bg-gradient-to-r from-green-50 to-emerald-100 text-green-700 border-2 border-green-300 hover:from-green-100 hover:to-emerald-200 hover:border-green-500 hover:text-green-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Change Password
+              <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div class="relative flex items-center gap-2 justify-center">
+                <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <span>Change Password</span>
+              </div>
             </Button>
+
+            <!-- Manage Users Button - Purple -->
             <Button 
               onClick={() => goto('/admin/users')}
-              variant="primary"
-              class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              variant="outline"
+              class="group relative overflow-hidden bg-gradient-to-r from-purple-50 to-indigo-100 text-purple-700 border-2 border-purple-300 hover:from-purple-100 hover:to-indigo-200 hover:border-purple-500 hover:text-purple-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-              Manage Users
+              <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div class="relative flex items-center gap-2 justify-center">
+                <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <span>Manage Users</span>
+              </div>
             </Button>
+
+            <!-- Sign Out Button - Red -->
             <Button 
               onClick={handleSignOut}
               variant="outline"
-              class="bg-gradient-to-r from-red-50 to-pink-50 text-red-700 border-red-400 hover:from-red-100 hover:to-pink-100 hover:border-red-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border-2"
+              class="group relative overflow-hidden bg-gradient-to-r from-red-50 to-pink-100 text-red-700 border-2 border-red-300 hover:from-red-100 hover:to-pink-200 hover:border-red-500 hover:text-red-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
             >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
+              <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div class="relative flex items-center gap-2 justify-center">
+                <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign Out</span>
+              </div>
             </Button>
           </div>
         </div>
