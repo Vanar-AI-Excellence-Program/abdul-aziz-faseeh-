@@ -84,12 +84,12 @@ DATABASE_URL=postgresql://Login:faseeh565@localhost:5432/auth_app_db
 After starting the database, run the migrations:
 
 ```bash
-npm run db:migrate
+pnpm run db:migrate
 ```
 
 ### Generate New Migrations
 ```bash
-npm run db:generate
+pnpm run db:generate
 ```
 
 ## Data Persistence
