@@ -19,6 +19,11 @@
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
+	"packageManager": "pnpm@8.15.0",
+	"engines": {
+		"node": ">=18.0.0",
+		"pnpm": ">=8.0.0"
+	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/kit": "^2.22.0",
@@ -42,12 +47,10 @@
 		"@auth/drizzle-adapter": "^1.10.0",
 		"@auth/sveltekit": "^1.10.0",
 		"@google/generative-ai": "^0.21.0",
-		"@kitql/all-in": "^0.9.6",
 		"@tailwindcss/typography": "^0.5.16",
 		"@types/nodemailer": "^6.4.17",
 		"bcrypt": "^5.1.1",
 		"bcryptjs": "^3.0.2",
-		"better-sqlite3": "^12.2.0",
 		"drizzle-orm": "^0.44.4",
 		"nodemailer": "^6.10.1",
 		"pg": "^8.16.3",
