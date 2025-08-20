@@ -3,31 +3,9 @@
   import Button from '$lib/components/ui/Button.svelte';
   import { goto } from '$app/navigation';
   import { signOut } from '@auth/sveltekit/client';
-  import { onMount } from 'svelte';
 
   let { data } = $props();
   let { session } = data;
-
-  let chatStats = {
-    totalSessions: 0,
-    totalMessages: 0,
-    lastActivity: null
-  };
-  let loadingStats = true;
-
-  onMount(async () => {
-    try {
-      const response = await fetch('/api/chat/stats');
-      if (response.ok) {
-        const data = await response.json();
-        chatStats = data.stats;
-      }
-    } catch (error) {
-      console.error('Failed to load chat stats:', error);
-    } finally {
-      loadingStats = false;
-    }
-  });
 
   function handleProfileClick() {
     goto('/profile');
@@ -54,11 +32,6 @@
       window.location.href = '/';
     }
   }
-
-  function formatDate(date: Date | null): string {
-    if (!date) return 'Never';
-    return new Date(date).toLocaleDateString();
-  }
 </script>
 
 <svelte:head>
@@ -66,169 +39,92 @@
   <meta name="description" content="Access your personal dashboard with enhanced security features" />
 </svelte:head>
 
-<div class="min-h-screen bg-white relative overflow-hidden">
-  <!-- Enhanced 3D Background Elements -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-10 left-5 w-40 h-40 bg-blue-600 rounded-full opacity-3 blur-3xl transform rotate-12 animate-pulse"></div>
-    <div class="absolute top-20 right-10 w-32 h-32 bg-blue-500 rounded-full opacity-5 blur-2xl transform -rotate-12 animate-pulse delay-1000"></div>
-    <div class="absolute bottom-10 left-1/3 w-48 h-48 bg-blue-600 rounded-full opacity-2 blur-3xl transform rotate-45 animate-pulse delay-2000"></div>
-    <div class="absolute bottom-20 right-1/4 w-36 h-36 bg-blue-500 rounded-full opacity-4 blur-2xl transform -rotate-30 animate-pulse delay-1500"></div>
-  </div>
+<div class="min-h-screen bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+             <!-- Header -->
+       <div class="flex justify-between items-center mb-8">
+         <div>
+           <h1 class="text-3xl font-bold text-gray-900">Client Dashboard</h1>
+           <p class="text-gray-600 mt-2">Welcome back, {session?.user?.name || 'User'}!</p>
+         </div>
+         
+         <div class="grid grid-cols-1 gap-3 max-w-lg">
+           <!-- Profile Button - Blue -->
+           <Button 
+             onClick={handleProfileClick}
+             variant="outline"
+             class="group relative overflow-hidden bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-2 border-blue-300 hover:from-blue-100 hover:to-blue-200 hover:border-blue-500 hover:text-blue-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
+           >
+             <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+             <div class="relative flex items-center gap-2 justify-center">
+               <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+               </svg>
+               <span>Profile</span>
+             </div>
+           </Button>
+         </div>
+       </div>
 
-  <div class="relative z-10 min-h-screen">
-    <div class="max-w-7xl mx-auto px-8 py-12">
-      <!-- Enhanced Header Section -->
-      <div class="bg-gray-50 rounded-3xl p-10 shadow-2xl border border-gray-200 mb-16 transform hover:scale-[1.02] transition-transform duration-500">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center space-x-8">
-            <div class="relative">
-              <div class="w-24 h-24 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
-                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div class="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full opacity-80 animate-bounce"></div>
-            </div>
-            <div>
-              <h1 class="text-5xl font-bold text-gray-900 mb-3">
-                Client Dashboard
-              </h1>
-              <p class="text-2xl text-gray-700 font-medium">
-                Welcome back, <span class="font-bold text-blue-600">{session?.user?.name || 'User'}</span>!
-              </p>
-              <div class="flex items-center space-x-4 mt-4">
-                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
-                <span class="text-gray-600 font-medium">Secure Client Access</span>
-                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Enhanced Profile Button -->
-          <Button 
-            onClick={handleProfileClick}
-            variant="outline"
-            class="flex items-center gap-4 bg-white border-blue-200 hover:bg-blue-50 px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-          >
-            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="text-blue-600 font-semibold text-lg">Profile</span>
-          </Button>
-        </div>
-      </div>
+      
 
-      <!-- Enhanced Success Message -->
-      <div class="bg-green-50 border-2 border-green-200 rounded-3xl p-10 mb-16 shadow-2xl backdrop-blur-sm">
-        <div class="text-center">
-          <div class="w-24 h-24 bg-green-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl transform rotate-1 hover:rotate-0 transition-transform duration-500">
-            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 class="text-4xl font-bold text-green-800 mb-4">Successfully signed in!</h2>
-          <p class="text-green-700 text-xl leading-relaxed">You are now logged in as a client with enhanced security and modern interface.</p>
-          <div class="flex items-center justify-center space-x-6 mt-8">
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span class="text-green-700 font-medium">Secure Access</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 bg-green-400 rounded-full"></div>
-              <span class="text-green-600 font-medium">Modern Interface</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 bg-green-300 rounded-full"></div>
-              <span class="text-green-500 font-medium">Enhanced Features</span>
-            </div>
-          </div>
-        </div>
-      </div>
+             <!-- Dashboard Content -->
+       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+         <!-- Account Information Card -->
+         <Card>
+           <div class="p-6">
+             <h3 class="text-xl font-semibold mb-4">Account Information</h3>
+             <div class="space-y-4">
+               <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                 <span class="text-gray-600 font-medium">Name:</span>
+                 <span class="text-gray-900 font-semibold">{session?.user?.name || 'N/A'}</span>
+               </div>
+               <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                 <span class="text-gray-600 font-medium">Email:</span>
+                 <span class="text-gray-900 font-semibold">{session?.user?.email || 'N/A'}</span>
+               </div>
+               <div class="flex justify-between items-center py-2">
+                 <span class="text-gray-600 font-medium">Role:</span>
+                 <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                   {session?.user?.role || 'client'}
+                 </span>
+               </div>
+             </div>
+           </div>
+         </Card>
 
-      <!-- Enhanced Dashboard Content -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <!-- Enhanced Account Information Card -->
-        <div class="relative group">
-          <div class="absolute inset-0 bg-gray-50 rounded-3xl transform rotate-1 group-hover:rotate-0 transition-transform duration-700 shadow-2xl"></div>
-          <div class="relative bg-gray-50 rounded-3xl p-10 shadow-2xl border border-gray-200 backdrop-blur-sm group-hover:shadow-3xl transition-all duration-500">
-            <div class="flex items-center mb-8">
-              <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mr-6 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <h3 class="text-2xl font-bold text-gray-900">Account Information</h3>
-            </div>
-            <div class="space-y-6">
-              <div class="flex justify-between items-center py-4 border-b border-gray-200">
-                <span class="text-gray-600 font-medium text-lg">Name:</span>
-                <span class="text-gray-900 font-semibold text-lg">{session?.user?.name || 'N/A'}</span>
-              </div>
-              <div class="flex justify-between items-center py-4 border-b border-gray-200">
-                <span class="text-gray-600 font-medium text-lg">Email:</span>
-                <span class="text-gray-900 font-semibold text-lg">{session?.user?.email || 'N/A'}</span>
-              </div>
-              <div class="flex justify-between items-center py-4">
-                <span class="text-gray-600 font-medium text-lg">Role:</span>
-                <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold border border-blue-200">
-                  {session?.user?.role || 'client'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Enhanced Quick Actions Card -->
-        <div class="relative group">
-          <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl transform -rotate-1 group-hover:rotate-0 transition-transform duration-700 shadow-2xl"></div>
-          <div class="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-3xl p-10 shadow-2xl border border-blue-200/50 backdrop-blur-sm group-hover:shadow-3xl transition-all duration-500">
-            <div class="flex items-center mb-8">
-              <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mr-6 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div>
-                <h3 class="text-2xl font-bold bg-gradient-to-r from-blue-900 to-indigo-800 bg-clip-text text-transparent">Quick Actions</h3>
-                <p class="text-blue-600 text-sm font-medium">Access your most used features</p>
-              </div>
-            </div>
+         <!-- Quick Actions Card -->
+         <Card>
+           <div class="p-6">
+             <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
             
-            <!-- Primary Actions -->
+            <!-- Main Features -->
             <div class="mb-8">
               <h4 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Primary Actions
+                Main Features
               </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-4">
+                <!-- AI Chatbot Button - Blue -->
                 <Button 
                   onClick={() => goto('/dashboard/chatbot')}
-                  variant="primary" 
-                  fullWidth
-                  class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 hover:from-blue-700 hover:to-indigo-700 font-semibold text-lg py-4 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                  variant="outline"
+                  class="group relative overflow-hidden bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-2 border-blue-300 hover:from-blue-100 hover:to-blue-200 hover:border-blue-500 hover:text-blue-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-6 py-4 font-semibold text-lg"
                 >
-                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  AI Chatbot
-                </Button>
-                <Button 
-                  onClick={handleProfileClick}
-                  variant="outline" 
-                  fullWidth
-                  class="bg-white text-blue-700 border-blue-400 hover:bg-blue-50 hover:border-blue-500 font-semibold text-lg py-4 rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2"
-                >
-                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Edit Profile
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <div class="relative flex items-center gap-3 justify-center">
+                    <svg class="w-6 h-6 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>Start AI Chatbot</span>
+                  </div>
                 </Button>
               </div>
             </div>
 
-            <!-- Secondary Actions -->
+            <!-- Account Settings -->
             <div class="mb-8">
               <h4 class="text-lg font-semibold text-blue-800 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,81 +132,55 @@
                 </svg>
                 Account Settings
               </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Edit Profile Button - Blue -->
+                <Button 
+                  onClick={handleProfileClick}
+                  variant="outline"
+                  class="group relative overflow-hidden bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-2 border-blue-300 hover:from-blue-100 hover:to-blue-200 hover:border-blue-500 hover:text-blue-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <div class="relative flex items-center gap-2 justify-center">
+                    <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Edit Profile</span>
+                  </div>
+                </Button>
+
+                <!-- Change Password Button - Green -->
                 <Button 
                   onClick={() => goto('/profile#password')}
-                  variant="outline" 
-                  fullWidth
-                  class="bg-white text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 font-semibold text-lg py-4 rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2"
+                  variant="outline"
+                  class="group relative overflow-hidden bg-gradient-to-r from-green-50 to-emerald-100 text-green-700 border-2 border-green-300 hover:from-green-100 hover:to-emerald-200 hover:border-green-500 hover:text-green-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
                 >
-                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  </svg>
-                  Change Password
+                  <div class="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <div class="relative flex items-center gap-2 justify-center">
+                    <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <span>Change Password</span>
+                  </div>
                 </Button>
+
+                <!-- Sign Out Button - Red -->
                 <Button 
                   onClick={handleSignOut}
-                  variant="outline" 
-                  fullWidth
-                  class="bg-white text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 font-semibold text-lg py-4 rounded-2xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2"
+                  variant="outline"
+                  class="group relative overflow-hidden bg-gradient-to-r from-red-50 to-pink-100 text-red-700 border-2 border-red-300 hover:from-red-100 hover:to-pink-200 hover:border-red-500 hover:text-red-800 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 rounded-lg px-4 py-2 font-semibold text-sm"
                 >
-                  <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Sign Out
+                  <div class="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <div class="relative flex items-center gap-2 justify-center">
+                    <svg class="w-4 h-4 transform group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Sign Out</span>
+                  </div>
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Enhanced Chat Statistics Card -->
-        <div class="relative group">
-          <div class="absolute inset-0 bg-gray-50 rounded-3xl transform rotate-1 group-hover:rotate-0 transition-transform duration-700 shadow-2xl"></div>
-          <div class="relative bg-gray-50 rounded-3xl p-10 shadow-2xl border border-gray-200 backdrop-blur-sm group-hover:shadow-3xl transition-all duration-500">
-            <div class="flex items-center mb-8">
-              <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mr-6 shadow-lg group-hover:scale-110 transition-transform duration-500">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 class="text-2xl font-bold text-gray-900">Chat Statistics</h3>
-            </div>
-            {#if loadingStats}
-              <div class="text-center py-12">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p class="text-gray-600">Loading statistics...</p>
-              </div>
-            {:else}
-              <div class="space-y-6">
-                <div class="flex justify-between items-center py-4 border-b border-gray-200">
-                  <span class="text-gray-600 font-medium text-lg">Total Chats:</span>
-                  <span class="text-gray-900 font-semibold text-lg">{chatStats.totalSessions}</span>
-                </div>
-                <div class="flex justify-between items-center py-4 border-b border-gray-200">
-                  <span class="text-gray-600 font-medium text-lg">Total Messages:</span>
-                  <span class="text-gray-900 font-semibold text-lg">{chatStats.totalMessages}</span>
-                </div>
-                <div class="flex justify-between items-center py-4">
-                  <span class="text-gray-600 font-medium text-lg">Last Activity:</span>
-                  <span class="text-gray-900 font-semibold text-lg">{formatDate(chatStats.lastActivity)}</span>
-                </div>
-                <Button 
-                  onClick={() => goto('/dashboard/chatbot')}
-                  variant="outline" 
-                  fullWidth
-                  class="bg-blue-50 text-blue-700 border-blue-400 hover:bg-blue-100 font-semibold text-lg py-3 rounded-2xl transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 mt-6"
-                >
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  Start New Chat
-                </Button>
-              </div>
-            {/if}
-          </div>
-        </div>
+        </Card>
       </div>
     </div>
   </div>
-</div>

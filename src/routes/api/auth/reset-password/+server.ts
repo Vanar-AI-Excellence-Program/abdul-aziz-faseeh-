@@ -73,7 +73,8 @@ export const POST: RequestHandler = async ({ request }) => {
       .where(eq(verificationTokens.identifier, email));
 
     return json({ 
-      message: 'Password reset successfully' 
+      message: 'Password reset successfully',
+      userRole: user.role
     });
 
   } catch (error) {

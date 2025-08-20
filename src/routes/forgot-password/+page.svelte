@@ -9,6 +9,7 @@
   let success = $state(false);
   let error = $state('');
   let resetUrl = $state('');
+  let userRole = $state('');
 
   async function handleSubmit() {
     if (!email) {
@@ -37,6 +38,8 @@
           resetUrl = data.resetUrl;
           console.log('🔗 Reset Link (Development):', data.resetUrl);
         }
+        // Fetch user role to determine correct login page
+        await fetchUserRole();
       } else {
         error = data.error || 'Failed to send reset email';
       }
@@ -47,8 +50,35 @@
     }
   }
 
+  // Function to fetch user role based on email
+  async function fetchUserRole() {
+    if (!email) return;
+    
+    try {
+      const response = await fetch('/api/user/role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        userRole = data.role || '';
+      }
+    } catch (err) {
+      console.log('Could not fetch user role, defaulting to regular login');
+    }
+  }
+
   function goToLogin() {
-    goto('/login');
+    // Redirect to appropriate login page based on user role
+    if (userRole === 'admin') {
+      goto('/admin/signin');
+    } else {
+      goto('/login');
+    }
   }
 </script>
 
