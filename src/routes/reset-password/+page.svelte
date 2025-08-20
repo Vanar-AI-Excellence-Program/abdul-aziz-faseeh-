@@ -12,13 +12,49 @@
   let error = $state('');
   let token = $state('');
   let email = $state('');
+  let userRole = $state('');
 
   // Get token and email from URL parameters
   $effect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     token = urlParams.get('token') || '';
     email = urlParams.get('email') || '';
+    
+    console.log('🔗 URL params - token:', token?.substring(0, 10) + '...', 'email:', email);
+    
+    // Fetch user role when email is available
+    if (email) {
+      fetchUserRole();
+    }
   });
+
+  // Function to fetch user role based on email
+  async function fetchUserRole() {
+    if (!email) return;
+    
+    console.log('🔍 Fetching user role for email:', email);
+    
+    try {
+      const response = await fetch('/api/user/role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        userRole = data.role || '';
+        console.log('✅ User role fetched:', userRole);
+      } else {
+        console.log('❌ Failed to fetch user role, response:', response.status);
+      }
+    } catch (err) {
+      console.log('❌ Error fetching user role:', err);
+      console.log('Could not fetch user role, defaulting to regular login');
+    }
+  }
 
   async function handleSubmit() {
     if (!password) {
@@ -56,6 +92,9 @@
 
       if (response.ok) {
         success = true;
+        // Get user role from response to determine correct login page
+        userRole = data.userRole || '';
+        console.log('✅ Password reset successful, userRole:', userRole);
       } else {
         error = data.error || 'Failed to reset password';
       }
@@ -67,7 +106,37 @@
   }
 
   function goToLogin() {
-    goto('/login');
+    console.log('🚀 goToLogin called, userRole:', userRole, 'email:', email);
+    
+    try {
+      // If user role is not available, try to determine from email domain or default to regular login
+      if (!userRole) {
+        console.log('⚠️ User role not available, defaulting to regular login');
+        goto('/login');
+        return;
+      }
+      
+      // Redirect to appropriate login page based on user role
+      if (userRole === 'admin') {
+        console.log('➡️ Redirecting to admin signin');
+        goto('/admin/signin');
+      } else {
+        console.log('➡️ Redirecting to regular login (role:', userRole, ')');
+        goto('/login');
+      }
+    } catch (error) {
+      console.error('❌ Redirect error:', error);
+      // Fallback to window.location
+      try {
+        if (userRole === 'admin') {
+          window.location.href = '/admin/signin';
+        } else {
+          window.location.href = '/login';
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback redirect also failed:', fallbackError);
+      }
+    }
   }
 </script>
 
@@ -105,9 +174,26 @@
             </div>
           </div>
 
-          <Button on:click={goToLogin} variant="primary" fullWidth>
+          <button 
+            on:click={() => {
+              console.log('🔘 Success button clicked!');
+              goToLogin();
+            }}
+            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+          >
             Go to Login
-          </Button>
+          </button>
+          
+          <!-- Test button for debugging -->
+          <button 
+            on:click={() => {
+              console.log('🧪 Test button clicked!');
+              window.location.href = '/login';
+            }}
+            class="mt-2 w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+          >
+            Test Redirect (Direct)
+          </button>
         {:else if !token || !email}
           <!-- Invalid Link -->
           <div class="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -126,9 +212,15 @@
             </div>
           </div>
 
-          <Button on:click={goToLogin} variant="primary" fullWidth>
+          <button 
+            on:click={() => {
+              console.log('🔘 Invalid link button clicked!');
+              goToLogin();
+            }}
+            class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+          >
             Go to Login
-          </Button>
+          </button>
         {:else}
           <!-- Reset Password Form -->
           <form on:submit|preventDefault={handleSubmit} class="space-y-4">
@@ -179,7 +271,10 @@
           <!-- Back to Login -->
           <div class="text-center">
             <button
-              on:click={goToLogin}
+              on:click={() => {
+                console.log('🔘 Back to Login button clicked!');
+                goToLogin();
+              }}
               class="text-sm text-blue-600 hover:text-blue-500 font-medium"
             >
               Back to Login
