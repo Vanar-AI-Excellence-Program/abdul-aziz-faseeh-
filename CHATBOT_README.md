@@ -282,10 +282,10 @@ The chat tables are created through Drizzle migrations:
 
 ```bash
 # Run migrations
-npm run db:migrate
+pnpm run db:migrate
 
 # Generate new migration (if schema changes)
-npx drizzle-kit generate
+pnpm run db:generate
 ```
 
 ## Environment Variables

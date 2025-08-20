@@ -152,7 +152,7 @@ Run the migration to add tree structure support:
 
 ```bash
 # Apply the migration
-npm run db:migrate
+pnpm run db:migrate
 
 # Or manually run the SQL
 psql -d your_database -f drizzle/0005_tree_chat_structure.sql

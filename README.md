@@ -23,6 +23,7 @@ A complete authentication system built with SvelteKit, Auth.js, Drizzle ORM, and
 ## Prerequisites
 
 - Node.js (v18 or later)
+- pnpm (v8 or later) - Install with `npm install -g pnpm`
 - PostgreSQL database
 
 ## Getting Started
@@ -37,7 +38,7 @@ cd authentication-app
 ### 2. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Set up environment variables
@@ -61,14 +62,14 @@ Replace the database URL with your PostgreSQL connection string and generate a s
 Run the database migrations to create the necessary tables:
 
 ```bash
-npm run db:generate
-npm run db:migrate
+pnpm run db:generate
+pnpm run db:migrate
 ```
 
 ### 5. Start the development server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 The application will be available at http://localhost:5173
@@ -110,11 +111,11 @@ The application will be available at http://localhost:5173
 
 ## Available Scripts
 
-- `npm run dev` - Start the development server
-- `npm run build` - Build the application for production
-- `npm run preview` - Preview the production build locally
-- `npm run db:generate` - Generate Drizzle migrations
-- `npm run db:migrate` - Apply Drizzle migrations
+- `pnpm run dev` - Start the development server
+- `pnpm run build` - Build the application for production
+- `pnpm run preview` - Preview the production build locally
+- `pnpm run db:generate` - Generate Drizzle migrations
+- `pnpm run db:migrate` - Apply Drizzle migrations
 
 ## Features
 
